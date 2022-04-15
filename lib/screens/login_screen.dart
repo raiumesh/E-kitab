@@ -3,7 +3,9 @@
 import 'package:book/colors/color_value.dart';
 import 'package:book/extrascreens/nav_screen.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({Key? key}) : super(key: key);
@@ -16,16 +18,20 @@ TextEditingController emailText = TextEditingController();
 TextEditingController passwordText = TextEditingController();
 
 class _LoginScreenState extends State<LoginScreen> {
+  Future write(user) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.setString('username', user);
+    Navigator.pushAndRemoveUntil(context,
+        MaterialPageRoute(builder: (context) => NavScreen()), (route) => false);
+  }
+
   Future<void> login() async {
     if (passwordText.text.isNotEmpty && emailText.text.isNotEmpty) {
       var response = await http.post(
           Uri.parse('https://major-project-ekitab.herokuapp.com/login'),
           body: ({'username': emailText.text, 'password': passwordText.text}));
       if (response.statusCode == 200) {
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => NavScreen()),
-        );
+        write(emailText.text);
       } else {
         ScaffoldMessenger.of(context)
             .showSnackBar(SnackBar(content: Text("Invalid Credentials")));
@@ -34,6 +40,22 @@ class _LoginScreenState extends State<LoginScreen> {
       ScaffoldMessenger.of(context)
           .showSnackBar(SnackBar(content: Text("Blank field not allowed")));
     }
+  }
+
+  void dojob() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String? u = prefs.getString('username');
+    if (u != null) {
+      Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(builder: (context) => NavScreen()),
+          (route) => false);
+    }
+  }
+
+  @override
+  void initState() {
+    dojob();
+    super.initState();
   }
 
   @override
@@ -53,12 +75,6 @@ class _LoginScreenState extends State<LoginScreen> {
                     style: TextStyle(fontSize: 30, fontWeight: FontWeight.bold),
                   ),
                 ),
-                // Center(
-                //   child: Text(
-                //     "Sign in Continue",
-                //     style: TextStyle(fontSize: 20, color: Colors.grey.shade400),
-                //   ),
-                // ),
                 SizedBox(
                   height: 40,
                 ),
@@ -94,17 +110,6 @@ class _LoginScreenState extends State<LoginScreen> {
                       border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(10))),
                 ),
-                // SizedBox(
-                //   height: 5,
-                // ),
-                // Align(
-                //   alignment: Alignment.bottomRight,
-                //   child: Text(
-                //     "Forget Password",
-                //     style:
-                //         TextStyle(fontSize: 15, fontWeight: FontWeight.normal),
-                //   ),
-                // ),
                 SizedBox(
                   height: 15,
                 ),

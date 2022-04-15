@@ -1,9 +1,12 @@
 // ignore_for_file: prefer_const_literals_to_create_immutables, prefer_const_constructor, prefer_const_constructors, avoid_print
+import 'package:book/colors/color_value.dart';
 import 'package:book/extramenuscreens/aboutus_screen.dart';
 import 'package:book/extramenuscreens/profile_screen.dart';
 import 'package:book/extramenuscreens/terms_screen.dart';
 import 'package:book/screens/login_screen.dart';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class MenuScreen extends StatefulWidget {
   const MenuScreen({Key? key}) : super(key: key);
@@ -19,37 +22,97 @@ class _MenuScreenState extends State<MenuScreen> {
       body: ListView(
         padding: EdgeInsets.only(top: 35),
         children: <Widget>[
-          ListTile(
-            leading: Icon(Icons.person),
-            title: Text("Profile"),
-            onTap: () {
-              Navigator.push(context,
-                  MaterialPageRoute(builder: (context) => ProfileScreen()));
-            },
+          Card(
+            child: ListTile(
+              leading: Icon(
+                Icons.person,
+                color: kMainColor,
+              ),
+              trailing: Icon(
+                Icons.arrow_forward_ios_outlined,
+              ),
+              title: Text(
+                "Profile",
+                style: GoogleFonts.openSans(
+                    color: kBlackColor,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 14),
+              ),
+              onTap: () {
+                Navigator.push(context,
+                    MaterialPageRoute(builder: (context) => ProfileScreen()));
+              },
+            ),
           ),
-          ListTile(
-            leading: Icon(Icons.book),
-            title: Text("About us"),
-            onTap: () {
-              Navigator.push(context,
-                  MaterialPageRoute(builder: (context) => AboutusScreen()));
-            },
+          Card(
+            child: ListTile(
+              leading: Icon(
+                Icons.info,
+                color: kMainColor,
+              ),
+              trailing: Icon(
+                Icons.arrow_forward_ios_outlined,
+              ),
+              title: Text(
+                "About us",
+                style: GoogleFonts.openSans(
+                    color: kBlackColor,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 14),
+              ),
+              onTap: () {
+                Navigator.push(context,
+                    MaterialPageRoute(builder: (context) => AboutusScreen()));
+              },
+            ),
           ),
-          ListTile(
-            leading: Icon(Icons.content_paste),
-            title: Text("Terms and Condition"),
-            onTap: () {
-              Navigator.push(context,
-                  MaterialPageRoute(builder: (context) => TermsScreen()));
-            },
+          Card(
+            child: ListTile(
+              leading: Icon(
+                Icons.content_paste,
+                color: kMainColor,
+              ),
+              trailing: Icon(
+                Icons.arrow_forward_ios_outlined,
+              ),
+              title: Text(
+                "Terms and Condition",
+                style: GoogleFonts.openSans(
+                    color: kBlackColor,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 14),
+              ),
+              onTap: () {
+                Navigator.push(context,
+                    MaterialPageRoute(builder: (context) => TermsScreen()));
+              },
+            ),
           ),
-          ListTile(
-            leading: Icon(Icons.logout),
-            title: Text("Logout"),
-            onTap: () {
-              Navigator.push(context,
-                  MaterialPageRoute(builder: (context) => LoginScreen()));
-            },
+          Card(
+            child: ListTile(
+              leading: Icon(
+                Icons.logout,
+                color: kMainColor,
+              ),
+              trailing: Icon(
+                Icons.arrow_forward_ios_outlined,
+              ),
+              title: Text(
+                "Logout",
+                style: GoogleFonts.openSans(
+                    color: kBlackColor,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 14),
+              ),
+              onTap: () async {
+                SharedPreferences prefs = await SharedPreferences.getInstance();
+                prefs.clear();
+                Navigator.pushAndRemoveUntil(
+                    context,
+                    MaterialPageRoute(builder: (context) => LoginScreen()),
+                    (route) => false);
+              },
+            ),
           ),
         ],
       ),

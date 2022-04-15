@@ -1,25 +1,27 @@
 // ignore_for_file: prefer_const_constructors, prefer_const_constructors_in_immutables, use_key_in_widget_constructors, avoid_unnecessary_containers, must_be_immutable
 
+import 'dart:convert';
+
+import 'dart:ffi';
+
+import 'dart:io';
+import 'package:flutter/services.dart';
+
 import 'package:book/colors/color_value.dart';
+
 import 'package:google_fonts/google_fonts.dart';
-import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'package:rating_dialog/rating_dialog.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:permission_handler/permission_handler.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:dio/dio.dart';
 
-class DetailScreen extends StatelessWidget {
-  // final PopularBookModel _popularBookModel;
-  // DetailScreen(this._popularBookModel);
-  // Future<String> fetchData() async {
-  //   String url = "https://major-project-ekitab.herokuapp.com/recs";
-  //   http.Response data = await http.post(Uri.parse(url),
-  //       body: ({
-  //         'username': '074bct519',
-  //       }));
-
-  //   return data.body;
-  // }
-
-  String title, coverurl, bookurl, author, uicontent;
-  int rating;
+class DetailScreen extends StatefulWidget {
+  String title, coverurl, author, uicontent;
+  String? bookurl;
+  double rating;
   DetailScreen(
       {required this.title,
       required this.author,
@@ -29,22 +31,207 @@ class DetailScreen extends StatelessWidget {
       required this.rating});
 
   @override
+  State<DetailScreen> createState() => _DetailScreenState();
+}
+
+class User {
+  final int? id;
+  final int? bookid;
+  final String? userid;
+  final String? comment;
+  final double? rating;
+
+  User({
+    this.id,
+    this.bookid,
+    this.userid,
+    this.comment,
+    this.rating,
+  });
+}
+
+class _DetailScreenState extends State<DetailScreen> {
+  String username = " ";
+  void getcred() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    setState(() {
+      username = prefs.getString('username')!;
+    });
+    print(username);
+  }
+
+  TextEditingController review = TextEditingController();
+
+  bool loading = false;
+  Dio dio = new Dio();
+  String filePath = "";
+  String imagePath = "";
+  //read epub
+  createFolder() async {
+    final folderName = "images";
+    final path = Directory(
+        "/storage/emulated/0/Android/data/com.example.book/files/$folderName");
+    if ((await path.exists())) {
+      // TODO:
+      print("exist");
+    } else {
+      // TODO:
+      print("not exist");
+      path.create();
+    }
+  }
+
+  //download
+  startDownload() async {
+    Directory? appDocDir = Platform.isAndroid
+        ? await getExternalStorageDirectory()
+        : await getApplicationDocumentsDirectory();
+
+    String path =
+        appDocDir!.path + '/' + widget.title + '.' + widget.author + '.epub';
+    var ext = widget.coverurl.split('.');
+    String imagep = appDocDir.path + '/images/' + widget.title + '.' + ext.last;
+    File file = File(path);
+    File image = File(imagep);
+    print(path);
+
+    if (!File(path).existsSync()) {
+      await file.create();
+      print(widget.bookurl);
+      await dio.download(
+        'https://major-project-ekitab.herokuapp.com' +
+            widget.bookurl.toString(),
+        path,
+        deleteOnError: true,
+        onReceiveProgress: (receivedBytes, totalBytes) {
+          var percentage = receivedBytes / totalBytes * 100;
+          print((receivedBytes / totalBytes * 100).toStringAsFixed(0));
+          //Check if download is complete and close the alert dialog
+          if (receivedBytes == totalBytes) {
+            loading = false;
+            filePath = path;
+          }
+        },
+      );
+    } else {
+      loading = false;
+
+      filePath = path;
+    }
+
+    if (!File(imagep).existsSync()) {
+      await file.create();
+      await dio.download(
+        'https://major-project-ekitab.herokuapp.com' + widget.coverurl,
+        imagep,
+        deleteOnError: true,
+        onReceiveProgress: (receivedBytes, totalBytes) {
+          print((receivedBytes / totalBytes * 100).toStringAsFixed(0));
+          //Check if download is complete and close the alert dialog
+          if (receivedBytes == totalBytes) {
+            loading = false;
+
+            imagePath = imagep;
+          }
+        },
+      );
+    } else {
+      loading = false;
+
+      imagePath = imagep;
+    }
+//    await file.delete();r
+  }
+
+  Future downloadFile() async {
+    print('download already done');
+    print(filePath);
+
+    if (await Permission.storage.isGranted) {
+      await Permission.storage.request();
+
+      await startDownload();
+    } else {
+      await startDownload();
+    }
+  }
+
+  download() async {
+    if (Platform.isAndroid || Platform.isIOS) {
+      print('download');
+      await downloadFile();
+    } else {
+      loading = false;
+    }
+
+    print(filePath);
+  }
+
+  saver(response) async {
+    String url =
+        "https://major-project-ekitab.herokuapp.com/savereviews?bookid=" +
+            widget.title +
+            "&userid=" +
+            username +
+            "&comment=" +
+            response.comment +
+            "&rating=" +
+            response.rating.toString();
+    http.Response data1 = await http.get(Uri.parse(url));
+    getReview();
+  }
+
+  getReview() async {
+    String url = "https://major-project-ekitab.herokuapp.com/reviews?title=" +
+        widget.title;
+    http.Response data1 = await http.get(Uri.parse(url));
+
+    var reviewData = json.decode(data1.body);
+    List<User> users = [];
+    for (var singleUser in reviewData) {
+      User user = User(
+          id: singleUser["id"],
+          bookid: singleUser["bookid"],
+          userid: singleUser["userid"],
+          comment: singleUser["comment"],
+          rating: singleUser["rating"]);
+      users.add(user);
+    }
+    return users;
+  }
+
+  @override
+  void initState() {
+    getcred();
+    getReview();
+    super.initState();
+  }
+
+  @override
   Widget build(BuildContext context) {
+    SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
+      statusBarColor: Colors.transparent,
+      statusBarIconBrightness: Brightness.dark,
+    ));
+
     return Scaffold(
       bottomNavigationBar: Container(
-        margin: EdgeInsets.only(left: 25, right: 25, bottom: 15),
+        margin: EdgeInsets.only(left: 40, right: 40, bottom: 15),
         height: 45,
         color: Colors.transparent,
         child: FloatingActionButton(
-          onPressed: () {},
+          onPressed: () {
+            createFolder();
+            startDownload();
+          },
           backgroundColor: kMainColor,
           child: Text(
-            'Download Books',
+            'Download Book',
             style: GoogleFonts.openSans(
-                fontSize: 14, fontWeight: FontWeight.w600, color: kWhiteColor),
+                fontSize: 16, fontWeight: FontWeight.w600, color: kWhiteColor),
           ),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
+            borderRadius: BorderRadius.circular(30),
           ),
         ),
       ),
@@ -54,29 +241,21 @@ class DetailScreen extends StatelessWidget {
             slivers: <Widget>[
               SliverAppBar(
                 backgroundColor: kMainColor,
-                expandedHeight: MediaQuery.of(context).size.height * 0.5,
-                flexibleSpace: Container(
-                  color: kMainColor,
-                  height: MediaQuery.of(context).size.height * 0.5,
-                  child: Stack(
-                    children: <Widget>[
-                      Align(
-                        alignment: Alignment.bottomCenter,
-                        child: Container(
-                          margin: EdgeInsets.only(bottom: 62),
-                          width: 172,
-                          height: 225,
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(10),
-                            image: DecorationImage(
-                              image: NetworkImage(
-                                  "https://major-project-ekitab.herokuapp.com" +
-                                      coverurl),
-                            ),
-                          ),
+                expandedHeight: 500,
+                flexibleSpace: FlexibleSpaceBar(
+                  background: Padding(
+                    padding: const EdgeInsets.all(30.0),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(10),
+                        image: DecorationImage(
+                          fit: BoxFit.cover,
+                          image: NetworkImage(
+                              "https://major-project-ekitab.herokuapp.com" +
+                                  widget.coverurl),
                         ),
-                      )
-                    ],
+                      ),
+                    ),
                   ),
                 ),
               ),
@@ -85,9 +264,9 @@ class DetailScreen extends StatelessWidget {
                 Padding(
                   padding: EdgeInsets.only(top: 24, left: 25),
                   child: Text(
-                    title,
+                    widget.title,
                     style: GoogleFonts.openSans(
-                        fontSize: 22,
+                        fontSize: 20,
                         color: kBlackColor,
                         fontWeight: FontWeight.w600),
                   ),
@@ -95,17 +274,13 @@ class DetailScreen extends StatelessWidget {
                 Padding(
                   padding: EdgeInsets.only(top: 7, left: 25),
                   child: Text(
-                    author,
+                    widget.author,
                     style: GoogleFonts.openSans(
                         fontSize: 14,
                         color: kMainColor,
-                        fontWeight: FontWeight.w500),
+                        fontWeight: FontWeight.w600),
                   ),
                 ),
-                // Container(
-                //   height: 28,
-                //   margin: EdgeInsets.only(top: 23, bottom: 36),
-                //   padding: EdgeInsets.only(left: 25),
                 SizedBox(
                   height: 20,
                 ),
@@ -114,84 +289,20 @@ class DetailScreen extends StatelessWidget {
                   child: Text(
                     "Description",
                     style: GoogleFonts.openSans(
-                        fontSize: 14,
+                        fontSize: 16,
                         color: kBlackColor,
                         fontWeight: FontWeight.w600),
                   ),
                 ),
-                // DefaultTabController(
-                //   length: 2,
-                //   child: Container(
-                //     child: TabBar(
-                //         labelPadding: EdgeInsets.all(0),
-                //         indicatorPadding: EdgeInsets.all(0),
-                //         indicatorColor: kMainColor,
-                //         isScrollable: true,
-                //         labelColor: kBlackColor,
-                //         unselectedLabelColor: kGreyColor,
-                //         // labelStyle: GoogleFonts.openSans(
-                //         //     fontSize: 14, fontWeight: FontWeight.w700),
-                //         // unselectedLabelStyle: GoogleFonts.openSans(
-                //         //     fontSize: 14, fontWeight: FontWeight.w600),
-                //         tabs: [
-                //           Tab(
-                //             child: Container(
-                //               margin: EdgeInsets.only(right: 35),
-                //               child: Padding(
-                //                 padding: const EdgeInsets.only(left: 24),
-                //                 child: Text('Description'),
-                //               ),
-                //             ),
-                //           ),
-                //           Tab(
-                //             child: Container(
-                //               margin: EdgeInsets.only(right: 35),
-                //               child: Padding(
-                //                 padding: const EdgeInsets.only(left: 24),
-                //                 child: Text('Reviews'),
-                //               ),
-                //             ),
-                //           ),
-                //         ]),
-                //   ),
-                // ),
-                // Container(
-                //     child: TabBarView(
-                //   children: [
-                //     Center(
-                //       child: Padding(
-                //         padding:
-                //             EdgeInsets.only(left: 25, right: 25, bottom: 25),
-                //         child: Text(
-                //           uicontent,
-                //           style: GoogleFonts.openSans(
-                //             fontSize: 12,
-                //             fontWeight: FontWeight.w400,
-                //             color: kGreyColor,
-                //             letterSpacing: 1.5,
-                //             height: 2,
-                //           ),
-                //         ),
-                //       ),
-                //     ),
-                //     Center(
-                //       child: Padding(
-                //         padding:
-                //             EdgeInsets.only(left: 25, right: 25, bottom: 25),
-                //         child: Text("Reviews"),
-                //       ),
-                //     ),
-                //   ],
-                // )),
                 Padding(
                   padding: EdgeInsets.only(left: 25, right: 25, bottom: 25),
                   child: Text(
-                    uicontent,
+                    widget.uicontent,
                     style: GoogleFonts.openSans(
                       fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: kGreyColor,
-                      letterSpacing: 1.5,
+                      fontWeight: FontWeight.w500,
+                      color: kBlackColor,
+                      letterSpacing: 0.8,
                       height: 2,
                     ),
                   ),
@@ -200,13 +311,86 @@ class DetailScreen extends StatelessWidget {
                   height: 10,
                 ),
                 Padding(
-                  padding: EdgeInsets.only(left: 25, right: 25, bottom: 25),
+                  padding: EdgeInsets.only(left: 25, right: 25),
                   child: Text(
                     "Reviews",
                     style: GoogleFonts.openSans(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
                       color: kBlackColor,
+                    ),
+                  ),
+                ),
+                Container(
+                  height: 100,
+                  child: FutureBuilder(
+                    future: getReview(),
+                    builder: (BuildContext ctx, AsyncSnapshot snapshot) {
+                      if (snapshot.data == null) {
+                        return SizedBox();
+                      } else {
+                        return ListView.builder(
+                          itemCount: snapshot.data.length,
+                          itemBuilder: (context, index) {
+                            return Container(
+                              height: 60,
+                              child: Card(
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(10.0),
+                                  ),
+                                  margin: EdgeInsets.only(
+                                      left: 20, right: 10, bottom: 5, top: 10),
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(8.0),
+                                    child: Row(
+                                      children: [
+                                        Text(
+                                          snapshot.data[index].userid,
+                                          style: GoogleFonts.openSans(
+                                              fontSize: 13,
+                                              color: kMainColor,
+                                              fontWeight: FontWeight.w600),
+                                        ),
+                                        Text(":"),
+                                        SizedBox(
+                                          width: 10,
+                                        ),
+                                        Text(
+                                          snapshot.data[index].comment,
+                                          style: GoogleFonts.openSans(
+                                              fontSize: 13,
+                                              color: kBlackColor,
+                                              fontWeight: FontWeight.w600),
+                                        ),
+                                      ],
+                                    ),
+                                  )),
+                            );
+                          },
+                        );
+                      }
+                    },
+                  ),
+                ),
+                SizedBox(
+                  height: 10,
+                ),
+                Container(
+                  height: 40,
+                  margin: EdgeInsets.only(left: 100, right: 100, bottom: 15),
+                  child: ElevatedButton(
+                    onPressed: () {
+                      show();
+                    },
+                    child: Text("Rate and Review",
+                        style: GoogleFonts.openSans(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: kWhiteColor)),
+                    style: ElevatedButton.styleFrom(
+                      shape: new RoundedRectangleBorder(
+                        borderRadius: new BorderRadius.circular(10.0),
+                      ),
                     ),
                   ),
                 ),
@@ -216,5 +400,25 @@ class DetailScreen extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  void show() {
+    showDialog(
+        context: context,
+        barrierDismissible: true,
+        builder: (context) {
+          return RatingDialog(
+              title: Text('Rate this app!'),
+              image: Image.asset(
+                'assets/icon/logo.jpg',
+                width: 120,
+                height: 120,
+              ),
+              submitButtonText: 'Submit',
+              onCancelled: () => print('cancelled'),
+              onSubmitted: (response) {
+                saver(response);
+              });
+        });
   }
 }

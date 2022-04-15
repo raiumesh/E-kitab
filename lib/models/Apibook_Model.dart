@@ -67,7 +67,7 @@ class BookData {
   final String coverurl;
   final String uicontent;
   final String time;
-  final int rating;
+  final double rating;
   BookData({
     required this.id,
     required this.title,
@@ -97,7 +97,7 @@ class BookData {
     String? coverurl,
     String? uicontent,
     String? time,
-    int? rating,
+    double? rating,
   }) {
     return BookData(
       id: id ?? this.id,
@@ -148,7 +148,7 @@ class BookData {
       coverurl: map['coverurl'] ?? '' as String,
       uicontent: map['uicontent'] ?? '' as String,
       time: map['time'] ?? '' as String,
-      rating: map['rating'].toInt() as int,
+      rating: map['rating'] ?? '' as double,
     );
   }
 
