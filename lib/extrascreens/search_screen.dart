@@ -17,17 +17,6 @@ class SearchScreen extends StatefulWidget {
   _SearchScreenState createState() => _SearchScreenState();
 }
 
-var semesterLists = [
-  'Semester 1',
-  'Semester 2',
-  'Semester 3',
-  'Semester 4',
-  'Semester 5',
-  'Semester 6',
-  'Semester 7',
-  'Semester 8',
-];
-
 TextEditingController searchword = TextEditingController();
 
 class filterSuggestion {
@@ -52,16 +41,6 @@ class _SearchScreenState extends State<SearchScreen> {
   }
 
   List<SearchModel> searchState = [];
-  getsem(sem) async {
-    var value = sem + 1;
-    print(value);
-    var response = await http.get(Uri.parse(
-        'https://major-project-ekitab.herokuapp.com/sem?sem=' +
-            value.toString()));
-    final List<SearchModel> searchModel = searchModelFromJson(response.body);
-    setState(() => {searchState = searchModel});
-  }
-
   handleSubmit() async {
     print(searchword.text);
     var response = await http.post(
@@ -173,46 +152,7 @@ class _SearchScreenState extends State<SearchScreen> {
       body: Column(
         children: [
           SizedBox(
-            height: 50,
-            child: ListView.builder(
-              itemCount: semesterLists.length,
-              scrollDirection: Axis.horizontal,
-              itemBuilder: (BuildContext context, int index) {
-                return GestureDetector(
-                  onTap: () {
-                    getsem(index);
-                  },
-                  child: Container(
-                    margin: EdgeInsets.only(
-                      top: 10,
-                      right: 5,
-                      left: 5,
-                    ),
-                    width: 150,
-                    decoration: BoxDecoration(
-                        color: kMainColor,
-                        borderRadius: BorderRadius.circular(30)),
-                    child: Column(
-                      children: [
-                        Padding(
-                          padding: const EdgeInsets.only(top: 10.0),
-                          child: Text(
-                            semesterLists[index],
-                            style: GoogleFonts.openSans(
-                                color: kBackgroundColor,
-                                fontWeight: FontWeight.w600,
-                                fontSize: 14),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                );
-              },
-            ),
-          ),
-          SizedBox(
-            height: 20,
+            height: 10,
           ),
           Expanded(
             // ignore: unnecessary_null_comparison

@@ -321,8 +321,7 @@ class _DetailScreenState extends State<DetailScreen> {
                     ),
                   ),
                 ),
-                Container(
-                  height: 100,
+                Expanded(
                   child: FutureBuilder(
                     future: getReview(),
                     builder: (BuildContext ctx, AsyncSnapshot snapshot) {
@@ -377,22 +376,31 @@ class _DetailScreenState extends State<DetailScreen> {
                 ),
                 Container(
                   height: 40,
-                  margin: EdgeInsets.only(left: 100, right: 100, bottom: 15),
-                  child: ElevatedButton(
+                  margin: EdgeInsets.only(
+                    left: 100,
+                    right: 100,
+                  ),
+                  child: IconButton(
                     onPressed: () {
                       show();
                     },
-                    child: Text("Rate and Review",
-                        style: GoogleFonts.openSans(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                            color: kWhiteColor)),
-                    style: ElevatedButton.styleFrom(
-                      shape: new RoundedRectangleBorder(
-                        borderRadius: new BorderRadius.circular(10.0),
-                      ),
+                    icon: Icon(
+                      Icons.star,
+                      size: 30,
+                      color: kMainColor,
                     ),
                   ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.only(left: 130),
+                  child: Text("Rate and Review",
+                      style: GoogleFonts.openSans(
+                          fontSize: 13,
+                          color: kBlackColor,
+                          fontWeight: FontWeight.w600)),
+                ),
+                SizedBox(
+                  height: 20,
                 ),
               ]))
             ],

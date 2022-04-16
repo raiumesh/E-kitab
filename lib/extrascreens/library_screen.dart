@@ -1,6 +1,4 @@
 import 'package:book/colors/color_value.dart';
-//import 'package:book/models/download_model.dart';
-//import 'package:book/screens/librarydetail_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:epub_viewer/epub_viewer.dart';
 import 'dart:convert';
@@ -44,9 +42,6 @@ class _LibraryScreenState extends State<LibraryScreen> {
         imagelist.add(element.path);
       });
     });
-    // print(titlelist);
-    // print(imagelist);
-    // print(titlelist);
   }
 
   givefile(path) {
@@ -55,7 +50,6 @@ class _LibraryScreenState extends State<LibraryScreen> {
 
   @override
   void initState() {
-    // TODO: implement initState
     listfile();
     super.initState();
   }

@@ -1,7 +1,7 @@
 // ignore_for_file: prefer_final_fields, prefer_const_constructors
 
 import 'package:book/colors/color_value.dart';
-//import 'package:book/extrascreens/favourite_screen.dart';
+import 'package:book/extrascreens/book_screen.dart';
 import 'package:book/extrascreens/library_screen.dart';
 import 'package:book/extrascreens/search_screen.dart';
 import 'package:book/extrascreens/menu_screen.dart';
@@ -20,6 +20,7 @@ class _NavScreenState extends State<NavScreen> {
   List<Widget> _widgetOptions = <Widget>[
     HomeScreen(),
     SearchScreen(),
+    BookScreen(),
     LibraryScreen(),
     MenuScreen(),
   ];
@@ -48,13 +49,13 @@ class _NavScreenState extends State<NavScreen> {
             icon: Icon(Icons.search),
             label: 'Search',
           ),
-          // BottomNavigationBarItem(
-          //   icon: Icon(Icons.favorite),
-          //   label: 'Favorite',
-          // ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.menu_book_outlined),
+            label: 'Library',
+          ),
           BottomNavigationBarItem(
             icon: Icon(Icons.book),
-            label: 'My library',
+            label: 'Downloads',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.menu),
