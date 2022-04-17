@@ -22,6 +22,7 @@ class DetailScreen extends StatefulWidget {
   String title, coverurl, author, uicontent;
   String? bookurl;
   double rating;
+
   DetailScreen(
       {required this.title,
       required this.author,
@@ -66,6 +67,8 @@ class _DetailScreenState extends State<DetailScreen> {
   Dio dio = new Dio();
   String filePath = "";
   String imagePath = "";
+  String downloadprogress = "";
+  String imagedownload = "";
   //read epub
   createFolder() async {
     final folderName = "images";
@@ -106,6 +109,10 @@ class _DetailScreenState extends State<DetailScreen> {
         onReceiveProgress: (receivedBytes, totalBytes) {
           var percentage = receivedBytes / totalBytes * 100;
           print((receivedBytes / totalBytes * 100).toStringAsFixed(0));
+          setState(() {
+            downloadprogress =
+                "downloading epub..." + percentage.toStringAsFixed(0) + '%';
+          });
           //Check if download is complete and close the alert dialog
           if (receivedBytes == totalBytes) {
             loading = false;
@@ -126,7 +133,11 @@ class _DetailScreenState extends State<DetailScreen> {
         imagep,
         deleteOnError: true,
         onReceiveProgress: (receivedBytes, totalBytes) {
-          print((receivedBytes / totalBytes * 100).toStringAsFixed(0));
+          setState(() {
+            imagedownload = "downloading image.." +
+                (receivedBytes / totalBytes * 100).toStringAsFixed(0) +
+                '%';
+          });
           //Check if download is complete and close the alert dialog
           if (receivedBytes == totalBytes) {
             loading = false;
@@ -188,15 +199,18 @@ class _DetailScreenState extends State<DetailScreen> {
 
     var reviewData = json.decode(data1.body);
     List<User> users = [];
-    for (var singleUser in reviewData) {
-      User user = User(
-          id: singleUser["id"],
-          bookid: singleUser["bookid"],
-          userid: singleUser["userid"],
-          comment: singleUser["comment"],
-          rating: singleUser["rating"]);
-      users.add(user);
-    }
+    setState(() {
+      for (var singleUser in reviewData) {
+        User user = User(
+            id: singleUser["id"],
+            bookid: singleUser["bookid"],
+            userid: singleUser["userid"],
+            comment: singleUser["comment"],
+            rating: singleUser["rating"]);
+        users.add(user);
+      }
+    });
+
     return users;
   }
 
@@ -221,8 +235,14 @@ class _DetailScreenState extends State<DetailScreen> {
         color: Colors.transparent,
         child: FloatingActionButton(
           onPressed: () {
-            createFolder();
-            startDownload();
+            if (widget.bookurl != null) {
+              createFolder();
+              startDownload();
+            } else {
+              setState(() {
+                downloadprogress = "book not found";
+              });
+            }
           },
           backgroundColor: kMainColor,
           child: Text(
@@ -321,7 +341,8 @@ class _DetailScreenState extends State<DetailScreen> {
                     ),
                   ),
                 ),
-                Expanded(
+                Container(
+                  height: 100,
                   child: FutureBuilder(
                     future: getReview(),
                     builder: (BuildContext ctx, AsyncSnapshot snapshot) {
@@ -379,6 +400,7 @@ class _DetailScreenState extends State<DetailScreen> {
                   margin: EdgeInsets.only(
                     left: 100,
                     right: 100,
+                    bottom: 10,
                   ),
                   child: IconButton(
                     onPressed: () {
@@ -386,7 +408,7 @@ class _DetailScreenState extends State<DetailScreen> {
                     },
                     icon: Icon(
                       Icons.star,
-                      size: 30,
+                      size: 50,
                       color: kMainColor,
                     ),
                   ),
@@ -398,6 +420,17 @@ class _DetailScreenState extends State<DetailScreen> {
                           fontSize: 13,
                           color: kBlackColor,
                           fontWeight: FontWeight.w600)),
+                ),
+                SizedBox(
+                  height: 20,
+                ),
+                Padding(
+                  padding: const EdgeInsets.only(left: 100),
+                  child: Text(downloadprogress),
+                ),
+                Padding(
+                  padding: const EdgeInsets.only(left: 100),
+                  child: Text(imagedownload),
                 ),
                 SizedBox(
                   height: 20,
