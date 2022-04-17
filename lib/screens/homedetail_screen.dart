@@ -400,7 +400,7 @@ class _DetailScreenState extends State<DetailScreen> {
                   margin: EdgeInsets.only(
                     left: 100,
                     right: 100,
-                    bottom: 10,
+                    bottom: 20,
                   ),
                   child: IconButton(
                     onPressed: () {
