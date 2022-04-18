@@ -54,8 +54,6 @@ class _HomeScreenState extends State<HomeScreen> {
           'username': username,
           'title': title,
         }));
-    print(title);
-    print(username);
     Navigator.push(
       context,
       MaterialPageRoute(
